@@ -1152,12 +1152,17 @@ class NekoGun(Weapon):
         utils.damage(user, user.target, n, 'melee')
         return n
 
+    
+    def aquare(self,user):
+        user.nekocd = 2
+    
+    
     def get_action(self, p, call):
         keyboard1 = types.InlineKeyboardMarkup()
         enemyteam = p.targets
         p.turn = call.data
         for c in enemyteam:
-            if p.energy < 4:
+            if p.energy < 4 or p.nekocd>0:
                 keyboard1.add(types.InlineKeyboardButton(text=c.name, callback_data=str('op' + str(c.chat_id))))
             else:
                 keyboard1.add(types.InlineKeyboardButton(text=c.name, callback_data=str('op' + str(c.chat_id))),
@@ -1176,18 +1181,19 @@ class NekoGun(Weapon):
                     xx=random.randint(1,2)
                     if xx==1:
                         bleed=1
-                        'кровоток'
+                        effect='кровоток'
+                        user.target.bleed(?)
                     else:
                         stun=1
                         effect='оглушение'
-                    user.target.bleed(?)
+                        user.target.stun(?)
                     d = str(
                         u'\U00003299' + u'\U0001F494' + "|" + user.name + ' взывает к Неко-силе! ' + user.target.name
                         + " получает эффект: " + effect +'! Нанесено ' + str(damagetaken) + ' урона.')
                 else:
                     d = str(
                         u'\U0001F4A8' + "|" + user.name
-                        + ' взывает к Неко-силе, но забывает попасть по ' + user.target.name + "!")
+                        + ' взывает к Неко-силе, но забывает попасть по ' + user.target.name + ".")
                 for a in user.abilities:
                     d = a.onhitdesc(a, d, user)
                 user.fight.string.add(d)
