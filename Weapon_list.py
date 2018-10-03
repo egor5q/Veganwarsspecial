@@ -1128,10 +1128,6 @@ class NekoGun(Weapon):
             if x > 10 - user.energy - self.bonus - user.accuracy - user.tempaccuracy + user.target.evasion:
                 n += 1
             d += 1
-        if n != 0 and random.randint(1,10)< self.chance:
-            user.target.bleedcounter += 1
-            user.target.bloodloss = False
-            user.Hitability = True
 
             # бонусный урон персонажа
         # уходит энергия
@@ -1149,7 +1145,7 @@ class NekoGun(Weapon):
         if user.energy < 0: user.energy = 0
 
         print('bleed')
-        utils.damage(user, user.target, n, 'melee')
+        utils.damage(user, user.target, n, 'ranged')
         return n
 
     
@@ -1182,11 +1178,14 @@ class NekoGun(Weapon):
                     if xx==1:
                         bleed=1
                         effect='кровоток'
-                        user.target.bleed(?)
+                        if user.target.bleedcounter>0:
+                            user.target.bleedcounter-=1
+                        else:
+                            user.target.bleedcounter=3
                     else:
                         stun=1
                         effect='оглушение'
-                        user.target.stun(?)
+                        user.target.stuncounter=1
                     d = str(
                         u'\U00003299' + u'\U0001F494' + "|" + user.name + ' взывает к Неко-силе! ' + user.target.name
                         + " получает эффект: " + effect +'! Нанесено ' + str(damagetaken) + ' урона.')
@@ -1209,10 +1208,6 @@ class NekoGun(Weapon):
                 d = str(
                     u'\U0001F44A' + "|" + getattr(self, str('desc' + str(random.randint(1, 3)))) + " Нанесено " + str(
                         damagetaken) + ' урона.')
-            if user.target.bleedcounter == 1 and user.Hitability:
-                d += u'\U00002763' + "|" + user.target.name + ' истекает кровью!'
-            elif user.target.bleedcounter > 1 and user.Hitability:
-                d += u'\U00002763' + "|" 'Кровотечение усиливается!'
             for a in user.abilities:
                 d = a.onhitdesc(a, d, user)
             return d
