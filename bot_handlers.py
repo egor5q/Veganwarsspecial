@@ -11,7 +11,7 @@ types = telebot.types
 bot = telebot.TeleBot(config.token)
 
 # Таймер
-def join_timer(game)
+def join_timer(game):
     for i in range(299, 0, -1):
         if(not game.runTimer):
             break
