@@ -71,7 +71,7 @@ def start_game(message):
         bot_handlers.start_game(0, message.chat.id)
         bot.send_message(message.chat.id, "Используйте команду /join, чтобы вступить в игру. 5 минут до отмены игры.")
 
-# Обычный режим
+# Кастомный режим
 @bot.message_handler(commands=["customgame"])
 def start_game(message):
     if message.chat.id in Main_classes.existing_games:
@@ -178,7 +178,7 @@ def flee(message):
                 if x.chat_id == message.from_user.id:
                     game.pending_team2.remove(x)
             del Main_classes.dict_players[message.from_user.id]
-            bot.send_message(game.cid, message.from_user.first_name + ' сбежал!')
+            bot.send_message(game.cid, message.from_user.first_name + ' сбежал! Всего игроков: ' + game.gamers)
 
 
 
@@ -231,7 +231,7 @@ def add_player(message):
                 game.pending_players.append(player)
                 game.marked_id.append(player.chat_id)
                 Main_classes.dict_players[player.chat_id] = game
-                bot.send_message(game.cid, name + ' успешно присоединился.')
+                bot.send_message(game.cid, name + ' успешно присоединился. Всего игроков: ' + game.gamers)
                 if not game.pending_team1:
                     game.pending_team1.append(player)
                     datahandler.get_player(message.from_user.id, message.from_user.username, name)
