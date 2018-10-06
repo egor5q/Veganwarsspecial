@@ -28,7 +28,7 @@ def start_game(gametype, cid):
     game.gametype = game.gametypes[gametype]
     game.waitingtimer = threading.Timer(300, cancel_game, [game])
     game.waitingtimer.start()
-    joinTimer = threading.Thread(target=join_timer)
+    joinTimer = threading.Thread(target=join_timer, args=(game,))
     joinTimer.start()
 
 
