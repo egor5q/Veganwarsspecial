@@ -178,6 +178,7 @@ def flee(message):
                 if x.chat_id == message.from_user.id:
                     game.pending_team2.remove(x)
             del Main_classes.dict_players[message.from_user.id]
+            game.gamers = game.gamers - 1
             bot.send_message(game.cid, message.from_user.first_name + ' сбежал! Всего игроков: ' + str(game.gamers))
 
 
@@ -231,6 +232,7 @@ def add_player(message):
                 game.pending_players.append(player)
                 game.marked_id.append(player.chat_id)
                 Main_classes.dict_players[player.chat_id] = game
+                game.gamers = game.gamers + 1
                 bot.send_message(game.cid, name + ' успешно присоединился. Всего игроков: ' + str(game.gamers))
                 if not game.pending_team1:
                     game.pending_team1.append(player)
@@ -284,6 +286,7 @@ def add_player(message):
                 if game.gametype == game.gametypes[1] and len(game.pending_players) > 2:
                     pass
                 else:
+                    game.gamers = game.gamers + 1
                     bot.send_message(game.cid, name + ' успешно присоединился. Всего игроков: ' + str(game.gamers))
                     datahandler.get_player(message.from_user.id, message.from_user.username, name)
                     player = Main_classes.Player(message.from_user.id, name.split(' ')[0][:12],

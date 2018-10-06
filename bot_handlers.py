@@ -17,7 +17,7 @@ def join_timer(game):
         if(not game.runTimer):
             break
         if i % 60 == 0:
-            bot.send_message(game.cid, "Осталось " + str(i) + " минуты чтобы джойнуться!\n\nЖмите /join !")
+            bot.send_message(game.cid, "Осталось " + str(i/60) + " минуты чтобы джойнуться!\n\nЖмите /join !")
         time.sleep(1)
     game.runTimer = False
 
