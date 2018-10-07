@@ -1106,6 +1106,115 @@ class Knuckles(Weapon):
                     user.target.energy -= 4
                     user.fight.string.add(u'\U000026A1' + user.target.name + ' теряет 4 Энергии.')
 
+##############################КОД ПАСЮКА, ДЕЛАЕТСЯ################                    
+class NekoGun(Weapon):
+    def __init__(self, dice, damage, energy, bonus, fixed, Melee, TwoHanded, Concealable, name, damagestring, chance,
+                 standart=True, natural=False):
+        Weapon.__init__(self, dice, damage, energy, bonus, fixed, Melee, TwoHanded, Concealable, name, damagestring,
+                        standart=standart, natural=natural)
+        self.chance = chance
+
+    def hit(self,user):
+        n = 0
+        d = 0
+        dmax = self.dice
+        print(user.name + " стреляет из " + str(self.name) + '. Его энергия - ' + str(
+            user.energy) + '. Его точность и бонусная точность оружия - ' + ' '
+              + str(user.accuracy) + ' ' + str(self.bonus) +
+              '. Шанс попасть - ' + str(11 - user.energy - self.bonus - user.accuracy - user.tempaccuracy) + "+!")
+        while d != dmax:
+            x = random.randint(1, 10)
+            print(user.name + ' Выпало ' + str(x))
+            if x > 10 - user.energy - self.bonus - user.accuracy - user.tempaccuracy + user.target.evasion:
+                n += 1
+            d += 1
+
+            # бонусный урон персонажа
+        # уходит энергия
+        user.energy -= self.energy
+        if n!=0:
+            n += user.bonusdamage + self.damage - 1
+
+        for a in user.abilities:
+            n = a.onhit(a, n, user)
+        else:
+            pass
+        n += user.truedamage
+        # энергия загоняется в 0
+
+        if user.energy < 0: user.energy = 0
+
+        print('bleed')
+        utils.damage(user, user.target, n, 'ranged')
+        return n
+
+    
+    def aquare(self,user):
+        user.nekocd = 2
+    
+    
+    def get_action(self, p, call):
+        keyboard1 = types.InlineKeyboardMarkup()
+        enemyteam = p.targets
+        p.turn = call.data
+        for c in enemyteam:
+            if p.energy < 4 or p.nekocd>0:
+                keyboard1.add(types.InlineKeyboardButton(text=c.name, callback_data=str('op' + str(c.chat_id))))
+            else:
+                keyboard1.add(types.InlineKeyboardButton(text=c.name, callback_data=str('op' + str(c.chat_id))),
+                              types.InlineKeyboardButton(text="НекоШот", callback_data=str('weaponspecial' + str(c.chat_id))))
+
+        keyboard1.add(types.InlineKeyboardButton(text='Отмена', callback_data=str('opcancel')))
+        bot.send_message(p.chat_id, 'Выберите противника.', reply_markup=keyboard1)
+
+    def special(self, user, call):
+        user.target = utils.actor_from_id(call, user.game)
+
+    def special_second(self, user):
+        if user.turn == 'weaponspecial':
+                damagetaken = self.hit(user)
+                if damagetaken != 0:
+                    xx=random.randint(1,2)
+                    if xx==1:
+                        bleed=1
+                        effect='кровоток'
+                        if user.target.bleedcounter>0:
+                            user.target.bleedcounter-=1
+                        else:
+                            user.target.bleedcounter=3
+                    else:
+                        stun=1
+                        effect='оглушение'
+                        user.target.stuncounter=1
+                    d = str(
+                        u'\U00003299' + u'\U0001F494' + "|" + user.name + ' взывает к Неко-силе! ' + user.target.name
+                        + " получает эффект: " + effect +'! Нанесено ' + str(damagetaken) + ' урона.')
+                else:
+                    d = str(
+                        u'\U0001F4A8' + "|" + user.name
+                        + ' взывает к Неко-силе, но забывает попасть по ' + user.target.name + ".")
+                for a in user.abilities:
+                    d = a.onhitdesc(a, d, user)
+                user.fight.string.add(d)
+                user.energy -= 4
+
+    def getDesc(self, damagetaken, user):
+        if damagetaken != 0:
+            if not self.Melee:
+                d = str(
+                    u'\U0001F4A5' + "|" + getattr(self, str('desc' + str(random.randint(1, 3)))) + " Нанесено " + str(
+                        damagetaken) + ' урона.')
+            else:
+                d = str(
+                    u'\U0001F44A' + "|" + getattr(self, str('desc' + str(random.randint(1, 3)))) + " Нанесено " + str(
+                        damagetaken) + ' урона.')
+            for a in user.abilities:
+                d = a.onhitdesc(a, d, user)
+            return d
+        else:
+            return str(u'\U0001F4A8' + "|" + getattr(self, str('desc' + str(random.randint(4, 6)))))          
+                    
+##############################КОНЕЦ КОДА ПАСЮКА################        
 
 class Club(Weapon):
 
