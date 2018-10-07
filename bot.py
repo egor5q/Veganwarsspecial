@@ -185,7 +185,7 @@ def flee(message):
 @bot.message_handler(commands=["cancel"])
 def cancel(message):
     game = utils.get_game_from_chat(message.chat.id)
-    if game is not None and game.gamestate = game.gamestates[0]:
+    if game is not None and game.gamestate == game.gamestates[0]:
         bot_handlers.cancel_game(game)
 
 
