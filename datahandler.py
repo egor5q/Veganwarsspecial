@@ -1,139 +1,83 @@
-import psycopg2
 import os
-from urllib.parse import urlparse
+from pymongo import MongoClient
 
-url = urlparse(os.environ['DATABASE_URL'])
+client = MongoClient(os.environ['database'])
+db = client.veganwars
+players = db.players
 
 def get_player(chat_id, username, first_name):
     if username is not None:
-        db = psycopg2.connect(
-            "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-        cursor = db.cursor()
-        cursor.execute('CREATE TABLE IF NOT EXISTS players ( id INTEGER ,games_played INTEGER, games_won INTEGER, name text, username text)')
-        cursor.execute('SELECT name FROM players WHERE id = %s', (chat_id,))
-        data = cursor.fetchone()
-        if data is None:
-            cursor.execute('INSERT INTO players(id, games_played, games_won, name, username, private_string)VALUES (%s,%s,%s,N%s,%s,%s)', (chat_id, 0, 0, first_name, '@' + username, '0'))
-        else:
-            print(data[0])
-        db.commit()
-        db.close()
+        doc = players.find_one({'id':chat_id})
+        if doc is None:
+            players.insert_one({'id':chat_id, 'games_played':0, 'games_won':0, 'name':first_name, 'username':'@' + username, 'private_string':'0'})
     else:
-        db = psycopg2.connect(
-            "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-        cursor = db.cursor()
-        cursor.execute('SELECT name FROM players WHERE id = %s', (chat_id,))
-        data = cursor.fetchone()
-        if data is None:
-            cursor.execute('INSERT INTO players(id, games_played, games_won, name)VALUES (%s,%s,%s,%s)',
-                           (chat_id, 0, 0, first_name))
-        else:
-            print(data[0])
-        db.commit()
-        db.close()
-
+        doc = players.find_one({'id':chat_id})
+        if doc is None:
+            players.insert_one({'id':chat_id, 'games_played':0, 'games_won':0, 'name':first_name})
 
 def get_games(chat_id):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT games_played, games_won FROM players WHERE id = %s', (chat_id,))
-    data = cursor.fetchone()
-    db.close()
-    return data
+    doc = players.find_one({'id':chat_id})
+    games_played = doc['games_played']
+    games_won = doc['games_won']
+    return [games_played, games_won]
 
 
 def add_played_games(chat_id, game=1):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT games_played FROM players WHERE id = %s', (chat_id,))
-    data = cursor.fetchone()
-    games = int(data[0])
-    games += game
-    cursor.execute('UPDATE players SET games_played = %s WHERE id = %s', (games,chat_id))
-    db.commit()
-    db.close()
+    players.update_one({'id':chat_id}, {'$inc':{'games_played':game}})
 
 
 def getallplayers():
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT id FROM players')
-    ids = cursor.fetchall()
-    db.close()
-    return ids
+    return players.distinct('id')
 
 
 def add_won_games(chat_id, game=1):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT games_won FROM players WHERE id = %s', (chat_id,))
-    data = cursor.fetchone()
-    games = int(data[0])
-    games += game
-    cursor.execute('UPDATE players SET games_won = %s WHERE id = %s', (games, chat_id))
-    db.commit()
-    db.close()
+    players.update_one({'id':chat_id}, {'$inc':{'games_won':game}})
 
 
 def get_dataname(chat_id):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT name FROM players WHERE id = %s', (chat_id,))
-    data = cursor.fetchone()
-    db.close()
-    return data[0]
+    doc = players.find_one({'id':chat_id})
+    return doc['name']
 
 
 def add_column():
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('alter table players add column "private_string" text')
-    cursor.execute('UPDATE players SET "private_string" = %s', (0,))
-    db.commit()
-    db.close()
+    players.update_many({}, {'$set':{'private_string':'0'}})
 
 
 def get_current(chat_id):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT current_weapon, current_items, current_skills FROM players WHERE id = %s', (chat_id,))
-    data = cursor.fetchone()
-    db.close()
-    return data
+    doc = players.find_one({'id':chat_id})
+    current_weapon = None
+    if 'current_weapon' in doc:
+        current_weapon = doc['current_weapon']
+    current_items = None
+    if 'current_items' in doc:
+        current_items = doc['current_items']
+    current_skills = None
+    if 'current_skills' in doc:
+        current_skills = doc['current_skills']
+    return [current_weapon, current_items, current_skills]
 
 
 def get_unique(chat_id):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT unique_weapon, unique_items, unique_skills FROM players WHERE id = %s', (chat_id,))
-    data = cursor.fetchone()
-    db.close()
-    return data
+    doc = players.find_one({'id':chat_id})
+    unique_weapon = None
+    if 'unique_weapon' in doc:
+        unique_weapon = doc['unique_weapon']
+    unique_items = None
+    if 'unique_items' in doc:
+        unique_items = doc['unique_items']
+    unique_skills = None
+    if 'unique_skills' in doc:
+        unique_skills = doc['unique_skills']
+    return [unique_weapon, unique_items, unique_skills]
 
 
 def change_weapon(cid, weapon_name):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('UPDATE players SET current_weapon = %s WHERE id = %s', (weapon_name, cid))
-    db.commit()
-    db.close()
+    players.update_one({'id':cid}, {'$set':{'weapon_name':weapon_name}})
 
 
 def add_item(cid, item_id):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT current_items FROM players WHERE id = %s', (cid,))
-    data = list(cursor.fetchone())
+    doc = players.find_one({'id':cid})
+    data = list(doc['current_items'])
     if data[0] is None:
         data[0] = item_id
     elif len(data[0].split(',')) > 1:
@@ -150,18 +94,13 @@ def add_item(cid, item_id):
             if data[0] == '':
                 data[0] = None
                 break
-    cursor.execute('UPDATE players SET current_items = %s WHERE id = %s', (data[0], cid))
-    db.commit()
-    db.close()
+    players.update_one({'id':cid}, {'$set':{'current_items':data[0]}})
     return True
 
 
 def delete_item(cid, item_id):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT current_items FROM players WHERE id = %s', (cid,))
-    data = list(cursor.fetchone())
+    doc = players.find_one({'id':cid})
+    data = list(doc['current_items'])
     if data[0] is None:
         return False
     else:
@@ -174,45 +113,31 @@ def delete_item(cid, item_id):
                 data[0] = data[0][1:]
         if data[0] == '':
             data[0] = None
-    cursor.execute('UPDATE players SET current_items = %s WHERE id = %s', (data[0], cid))
-    db.commit()
-    db.close()
+    players.update_one({'id':cid}, {'$set':{'current_items':data[0]}})
     return True
 
 
 def get_private_string(chat_id):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT private_string FROM players WHERE id = %s', (chat_id,))
-    data = cursor.fetchone()
-    db.close()
-    return data[0]
+    doc = players.find_one({'id':chat_id})
+    private_string = None
+    if 'private_string' in doc:
+        private_string = doc['private_string']
+    return private_string
 
 def change_private_string(chat_id):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT private_string FROM players WHERE id = %s', (chat_id,))
-    string = cursor.fetchone()[0]
-    db.close()
+    doc = players.find_one({'id':chat_id})
+    string = doc['private_string']
     if string == '0':
         string = '1'
     else:
         string = '0'
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('UPDATE players SET private_string = %s WHERE id = %s', (string, chat_id))
-    db.commit()
-    db.close()
+    players.update_one({'id':chat_id}, {'$set':{'private_string':string}})
 
 def add_skill(cid, skill_name):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT current_skills FROM players WHERE id = %s', (cid,))
-    data = list(cursor.fetchone())
+    doc = players.find_one({'id':cid})
+    data = list()
+    if 'current_skills' in doc:
+        data = list(doc['current_skills'])
     if data[0] is None:
         data[0] = skill_name
     elif len(data[0].split(',')) > 1:
@@ -229,18 +154,15 @@ def add_skill(cid, skill_name):
             if data[0] == '':
                 data[0] = None
                 break
-    cursor.execute('UPDATE players SET current_skills = %s WHERE id = %s', (data[0], cid))
-    db.commit()
-    db.close()
+    players.update_one({'id':cid}, {'$set':{'current_skills':data[0]}})
     return True
 
 
 def add_unique_weapon(username, weapon_name):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT unique_weapon FROM players WHERE username = %s', (username,))
-    data = list(cursor.fetchone())
+    doc = players.find_one({'username':username})
+    data = list()
+    if 'unique_weapon' in doc:
+        data = list(doc['unique_weapon'])
     if data[0] is None:
         data[0] = weapon_name
     else:
@@ -259,18 +181,13 @@ def add_unique_weapon(username, weapon_name):
             if data[0] == '':
                 data[0] = None
                 break
-    cursor.execute('UPDATE players SET unique_weapon = %s WHERE username = %s', (data[0], username))
-    db.commit()
-    db.close()
+    players.update_one({'username':username}, {'$set':{'unique_weapon':data[0]}})
     return True
 
 
 def delete_unique_weapon(username, weapon_name):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT unique_weapon FROM players WHERE username = %s', (username,))
-    data = list(cursor.fetchone())
+    doc = players.find_one({'username':username})
+    data = list(doc['unique_weapon'])
     if data[0] is None:
         return False
     else:
@@ -283,27 +200,19 @@ def delete_unique_weapon(username, weapon_name):
                 data[0] = data[0][1:]
         if data[0] == '':
             data[0] = None
-    cursor.execute('UPDATE players SET unique_weapon = %s WHERE username = %s', (data[0], username))
+    players.update_one({'username':username}, {'$set':{'unique_weapon':data[0]}})
     db.commit()
     db.close()
     return True
 
 
 def delete_inventory(username):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('UPDATE players SET current_skills = %s,current_items = %s, current_weapon = %s  WHERE username = %s', (None, None, None, username))
-    db.commit()
-    db.close()
+    players.update_one({'username':username}, {'$set':{'current_skills':None, 'current_items':None, 'current_weapon':None}})
 
 
 def delete_skill(cid, skill_name):
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('SELECT current_skills FROM players WHERE id = %s', (cid,))
-    data = list(cursor.fetchone())
+    doc = players.find_one({'id':cid})
+    data = list(doc['current_skills'])
     if data[0] is None:
         return False
     else:
@@ -316,16 +225,9 @@ def delete_skill(cid, skill_name):
                 data[0] = data[0][1:]
         if data[0] == '':
             data[0] = None
-    cursor.execute('UPDATE players SET current_skills = %s WHERE id = %s', (data[0], cid))
-    db.commit()
-    db.close()
+    players.update_one({'id':cid}, {'$set':{'current_skills':data[0]}})
     return True
 
 
 def refresh_string():
-    db = psycopg2.connect(
-        "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
-    cursor = db.cursor()
-    cursor.execute('UPDATE players SET private_string = %s', ('0'))
-    db.commit()
-    db.close()
+    players.update_many({}, {'$set':{'private_string':'0'}})

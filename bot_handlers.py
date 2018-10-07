@@ -6,9 +6,20 @@ import config
 import datahandler
 import Item_list
 import special_abilities
+import time
 
 types = telebot.types
 bot = telebot.TeleBot(config.token)
+
+# Таймер
+def join_timer(game):
+    for i in range(299, 0, -1):
+        if(not game.runTimer):
+            break
+        if i % 60 == 0:
+            bot.send_message(game.cid, "Осталось " + str(int(i/60)) + " минуты чтобы джойнуться!\n\nЖмите /join !")
+        time.sleep(1)
+    game.runTimer = False
 
 # Инициировать игру в чате
 def start_game(gametype, cid):
@@ -18,11 +29,14 @@ def start_game(gametype, cid):
     game.gametype = game.gametypes[gametype]
     game.waitingtimer = threading.Timer(300, cancel_game, [game])
     game.waitingtimer.start()
+    joinTimer = threading.Thread(target=join_timer, args=(game,))
+    joinTimer.start()
 
 
 # Удалить игру в чате
 def cancel_game(game):
     utils.delete_game(game)
+    game.runTimer = False
     bot.send_message(game.cid, "Игра отменена.")
 
 
@@ -32,6 +46,7 @@ def start_fight(cid):
     game.waitingtimer.cancel()
     game.gamestate = game.gamestates[1]
     game.waitingtimer.cancel()
+    game.runTimer = False
     t = threading.Thread(target=utils.prepare_fight, args=[game])
     t.daemon = True
     t.start()
@@ -41,6 +56,7 @@ def start_custom_fight(cid):
     game.waitingtimer.cancel()
     game.gamestate = game.gamestates[1]
     game.waitingtimer.cancel()
+    game.runTimer = False
     t = threading.Thread(target=utils.prepare_custom_fight, args=[game])
     t.daemon = True
     t.start()

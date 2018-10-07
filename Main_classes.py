@@ -45,6 +45,9 @@ class Game(object):
         self.string = Actionstring(self.cid)
         self.fight = Fight(self, self.team1, self.team2)
 
+        self.gamers = 0
+        self.runTimer = True
+
     def startfight(self):
         Fighting.fight_loop(self, self.fight)
 

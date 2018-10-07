@@ -71,7 +71,7 @@ def start_game(message):
         bot_handlers.start_game(0, message.chat.id)
         bot.send_message(message.chat.id, "Используйте команду /join, чтобы вступить в игру. 5 минут до отмены игры.")
 
-# Обычный режим
+# Кастомный режим
 @bot.message_handler(commands=["customgame"])
 def start_game(message):
     if message.chat.id in Main_classes.existing_games:
@@ -178,8 +178,15 @@ def flee(message):
                 if x.chat_id == message.from_user.id:
                     game.pending_team2.remove(x)
             del Main_classes.dict_players[message.from_user.id]
-            bot.send_message(game.cid, message.from_user.first_name + ' сбежал!')
+            game.gamers = game.gamers - 1
+            bot.send_message(game.cid, message.from_user.first_name + ' сбежал! Всего игроков: ' + str(game.gamers))
 
+
+@bot.message_handler(commands=["cancel"])
+def cancel(message):
+    game = utils.get_game_from_chat(message.chat.id)
+    if game is not None and game.gamestate == game.gamestates[0]:
+        bot_handlers.cancel_game(game)
 
 
 @bot.message_handler(commands=["suicide"])
@@ -230,7 +237,8 @@ def add_player(message):
                 game.pending_players.append(player)
                 game.marked_id.append(player.chat_id)
                 Main_classes.dict_players[player.chat_id] = game
-                bot.send_message(game.cid, name + ' успешно присоединился.')
+                game.gamers = game.gamers + 1
+                bot.send_message(game.cid, name + ' успешно присоединился. Всего игроков: ' + str(game.gamers))
                 if not game.pending_team1:
                     game.pending_team1.append(player)
                     datahandler.get_player(message.from_user.id, message.from_user.username, name)
@@ -283,7 +291,8 @@ def add_player(message):
                 if game.gametype == game.gametypes[1] and len(game.pending_players) > 2:
                     pass
                 else:
-                    bot.send_message(game.cid, message.from_user.first_name + ' успешно присоединился.')
+                    game.gamers = game.gamers + 1
+                    bot.send_message(game.cid, name + ' успешно присоединился. Всего игроков: ' + str(game.gamers))
                     datahandler.get_player(message.from_user.id, message.from_user.username, name)
                     player = Main_classes.Player(message.from_user.id, name.split(' ')[0][:12],
                                                  None, game, message.from_user.username)
