@@ -20,7 +20,6 @@ def join_timer(game):
             bot.send_message(game.cid, "Осталось " + str(int(i/60)) + " минуты чтобы джойнуться!\n\nЖмите /join !")
         time.sleep(1)
     game.runTimer = False
-    cancel_game(game)
 
 # Инициировать игру в чате
 def start_game(gametype, cid):
@@ -28,8 +27,10 @@ def start_game(gametype, cid):
     Main_classes.existing_games[cid] = game
     game.gamestate = game.gamestates[0]
     game.gametype = game.gametypes[gametype]
-    game.joinTimer = threading.Thread(target=join_timer, args=(game,))
-    game.joinTimer.start()
+    game.waitingtimer = threading.Timer(300, cancel_game, [game])
+    game.waitingtimer.start()
+    joinTimer = threading.Thread(target=join_timer, args=(game,))
+    joinTimer.start()
 
 
 # Удалить игру в чате
