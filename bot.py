@@ -304,7 +304,7 @@ def add_player(message):
             elif game.gamestate != game.gamestates[0]:
                 bot.send_message(message.chat.id, 'Нет запущенной игры или игра уже началась.')
         except:
-            bot.send_message(message.chat.id, 'Что-то пошло не так. Возможно, стоит начать разговор с ботом @veganwarsbot.')
+            bot.send_message(message.chat.id, 'Что-то пошло не так. Возможно, стоит начать разговор с ботом @' + config.username)
 
     time.sleep(3)
 
@@ -681,17 +681,17 @@ def action(call):
 
 @bot.message_handler(content_types=["text"])
 def start(message):
-    if message.chat.id == 197216910 and Main_classes.ruporready:
+    if message.chat.id in config.admins and Main_classes.ruporready:
         Main_classes.ruporready = False
-        list = datahandler.getallplayers()
-        for x in list:
+        players = datahandler.getallplayers()
+        for x in players:
             try:
-                bot.send_message(x[0], message.text)
+                bot.send_message(x, message.text)
             except:
                 pass
-    elif message.text == 'исправить' and message.chat.id == 197216910:
+    elif message.text == 'исправить' and message.chat.id in config.admins:
         datahandler.refresh_string()
-    elif message.text[:15] == 'добавить оружие' and message.chat.id == 197216910:
+    elif message.text[:15] == 'добавить оружие' and message.chat.id in config.admins:
         data = message.text.split(' ')
         if len(data) == 4:
             weapon_name = data[2]
@@ -715,7 +715,7 @@ def start(message):
                 bot.send_message(message.from_user.id, 'Уже есть')
         else:
             bot.send_message(message.from_user.id, 'Не успешно')
-    elif message.text[:14] == 'удалить оружие' and message.chat.id == 197216910:
+    elif message.text[:14] == 'удалить оружие' and message.chat.id in config.admins:
         data = message.text.split(' ')
         if len(data) == 4:
             weapon_name = data[2]
@@ -736,7 +736,7 @@ def start(message):
         else:
             bot.send_message(message.from_user.id, 'Не успешно')
 
-    elif message.text[:8] == 'очистить' and message.chat.id == 197216910:
+    elif message.text[:8] == 'очистить' and message.chat.id in config.admins:
         data = message.text.split(' ')
         datahandler.delete_inventory(data[1])
 bot.skip_pending = True

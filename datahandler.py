@@ -27,7 +27,7 @@ def add_played_games(chat_id, game=1):
 
 
 def getallplayers():
-    return players.distinct('id')
+    return list(players.distinct('id'))
 
 
 def add_won_games(chat_id, game=1):
@@ -72,14 +72,16 @@ def get_unique(chat_id):
 
 
 def change_weapon(cid, weapon_name):
-    players.update_one({'id':cid}, {'$set':{'weapon_name':weapon_name}})
+    players.update_one({'id':cid}, {'$set':{'current_weapon':weapon_name}})
 
 
 def add_item(cid, item_id):
     doc = players.find_one({'id':cid})
-    data = list(doc['current_items'])
-    if data[0] is None:
-        data[0] = item_id
+    data = list()
+    if 'current_items' in doc:
+        data = list(doc['current_items'])
+    if len(data) == 0:
+        data.append(item_id)
     elif len(data[0].split(',')) > 1:
         return False
     else:
@@ -100,8 +102,10 @@ def add_item(cid, item_id):
 
 def delete_item(cid, item_id):
     doc = players.find_one({'id':cid})
-    data = list(doc['current_items'])
-    if data[0] is None:
+    data = list()
+    if 'current_items' in doc:
+        data = list(doc['current_items'])
+    if len(data) == 0:
         return False
     else:
         data[0] = data[0].replace(item_id, '')
@@ -138,7 +142,7 @@ def add_skill(cid, skill_name):
     data = list()
     if 'current_skills' in doc:
         data = list(doc['current_skills'])
-    if data[0] is None:
+    if len(data) == 0:
         data[0] = skill_name
     elif len(data[0].split(',')) > 1:
         return False
@@ -163,7 +167,7 @@ def add_unique_weapon(username, weapon_name):
     data = list()
     if 'unique_weapon' in doc:
         data = list(doc['unique_weapon'])
-    if data[0] is None:
+    if len(data) == 0:
         data[0] = weapon_name
     else:
         if data[0] == '':
@@ -187,8 +191,10 @@ def add_unique_weapon(username, weapon_name):
 
 def delete_unique_weapon(username, weapon_name):
     doc = players.find_one({'username':username})
-    data = list(doc['unique_weapon'])
-    if data[0] is None:
+    data = list()
+    if 'unique_weapon' in doc:
+        data = list(doc['unique_weapon'])
+    if len(data) == 0:
         return False
     else:
         data[0] = data[0].replace(weapon_name, '')
@@ -212,8 +218,10 @@ def delete_inventory(username):
 
 def delete_skill(cid, skill_name):
     doc = players.find_one({'id':cid})
-    data = list(doc['current_skills'])
-    if data[0] is None:
+    data = list()
+    if 'current_skills' in doc:
+        data = list(doc['current_skills'])
+    if len(data) == 0:
         return False
     else:
         data[0] = data[0].replace(skill_name, '')

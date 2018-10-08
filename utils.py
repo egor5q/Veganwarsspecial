@@ -300,7 +300,7 @@ def get_first_ability(player):
         callback_button2 = types.\
             InlineKeyboardButton(text='Инфо', callback_data=str('i' + str(special_abilities.abilities.index(c))))
         keyboard.add(callback_button1, callback_button2)
-    if player.chat_id == 83697884 or player.name == 'Пасюк' or player.chat_id == 197216910:
+    if player.chat_id in config.admins:
         callback_button1 = types. \
             InlineKeyboardButton(text=special_abilities.IronFist.name, callback_data=str('unique_a' + str(special_abilities.unique_abilities.index(special_abilities.IronFist))))
         callback_button2 = types. \
